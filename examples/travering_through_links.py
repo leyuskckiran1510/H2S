@@ -10,3 +10,4 @@ for i in requests_list:
     print(i.response.content)
     print(i.request.query)
     print(i.request.url)
+    print(i.response.status)
