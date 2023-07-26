@@ -27,8 +27,6 @@ Note:- IT IS IMPLEMENTED AS DESCRIBED BY W3C
 import json
 from urllib.parse import urlencode
 from typing import Any, Dict, List, Union
-from requests.cookies import cookiejar_from_dict
-from requests.structures import CaseInsensitiveDict
 from base64 import standard_b64decode as base64decode
 
 
@@ -75,32 +73,27 @@ class _Cookies:
     ]
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Cookies, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dics: List[Dict[str, Any]] | None):
-        self.empty = False
         if not dics:
-            self.empty = True
             return
         self._cookies = [_cookie(i) for i in dics]
         self.cookieDic = {i.name: i.value for i in self._cookies}
 
     @property
     def cookies(self) -> Dict[str, Any]:
-        return cookiejar_from_dict(self.cookieDic)
+        return self.cookieDic
 
     def __call__(self) -> Any:
-        return cookiejar_from_dict(self.cookieDic)
-
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     self.cookieDic[__name] = __value
-
-    # def __getattribute__(self, __name: str) -> Any:
-    #     return self.cookieDic[__name]
+        return self.cookieDic
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return "; ".join([str(i) for i in self._cookies])
-        else:
-            return f"[]"
+        return "; ".join([str(i) for i in self._cookies])
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -134,35 +127,30 @@ class _Headers:
     ]
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Headers, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dics: List[Dict[str, Any]] | None):
-        self.empty = False
         if not dics:
-            self.empty = True
             return
         self.__headersList = [_header(i) for i in dics]
         self.headerDic = {i.name: i.value for i in self.__headersList}
 
     @property
     def headers(self):
-        return CaseInsensitiveDict(self.headerDic)
+        return self.headerDic
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return "; ".join([f"{i.name}={i.value}" for i in self.__headersList])
-        else:
-            return "[]"
+        return "; ".join([f"{i.name}={i.value}" for i in self.__headersList])
 
     def __str__(self) -> str:
         return self.__repr__()
 
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     self.headerDic[__name] = __value
-
-    # def __getattribute__(self, __name: str) -> Any:
-    #     return self.headerDic[__name]
-
     def __call__(self) -> Any:
-        return CaseInsensitiveDict(self.headerDic)
+        return self.headerDic
 
 
 class _query:
@@ -189,19 +177,17 @@ class _Query:
     ]
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Query, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dics: List[Dict[str, Any]] | None):
-        self.empty = False
         if not dics:
-            self.empty = True
             return
         self.__queryList = [_query(i) for i in dics]
         self.queryDic = {i.name: i.value for i in self.__queryList}
-
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     self.queryDic[__name] = __value
-
-    # def __getattribute__(self, __name: str) -> Any:
-    #     return self.queryDic[__name]
 
     def __call__(self) -> Any:
         return urlencode(self.queryDic)
@@ -211,10 +197,7 @@ class _Query:
         return urlencode(self.queryDic)
 
     def __repr__(self) -> str:
-        if self.empty:
-            return f"[]"
-        else:
-            return f"[{' , '.join([str(i) for i in self.__queryList])}]"
+        return f"[{' , '.join([str(i) for i in self.__queryList])}]"
 
     def __str__(self) -> str:
         return self.query
@@ -261,10 +244,14 @@ class _Params:
     ]
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Params, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dics: List[Dict[str, Any]] | None) -> None:
-        self.empty = False
         if not dics:
-            self.empty = True
             return
         self.__paramsList = [_param(i) for i in dics]
         self.paramDic = {i: i for i in self.__paramsList}
@@ -273,10 +260,7 @@ class _Params:
         return self.paramDic
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"[{[i for i in self.__paramsList]}]"
-        else:
-            return "[]"
+        return f"[{[i for i in self.__paramsList]}]"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -290,10 +274,14 @@ class _PostData:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_PostData, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, Any] | None):
-        self.empty = False
         if not dic:
-            self.empty = True
             return
         self.mimeType = dic.get("mimeType")
         self.text = dic.get("text")
@@ -306,7 +294,7 @@ class _PostData:
             # multipart parsing ignored currenlty
             return self.text
         else:
-            if not self.params.empty:
+            if self.params:
                 return urlencode(self.params())
             else:
                 return ""
@@ -316,16 +304,13 @@ class _PostData:
             # multipart parsing ignored currenlty
             return self.text
         else:
-            if not self.params.empty:
+            if self.params:
                 return urlencode(self.params())
             else:
                 return ""
 
     def __repr__(self) -> str:
-        if self.empty:
-            return f"Null"
-        else:
-            return f"{self.postData}"
+        return f"{self.postData}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -341,10 +326,14 @@ class _Content:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Content, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, Any] | None) -> None:
-        self.empty = False
         if not dic:
-            self.empty = True
             return
         self.size = dic.get("size")
         self.compression = dic.get("compression")
@@ -367,10 +356,7 @@ class _Content:
         return self.content
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"content = {self.content:.25!r}"
-        else:
-            return "empty"
+        return f"content = {self.content:.25!r}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -390,10 +376,14 @@ class _Request:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Request, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, Any] | None):
-        self.empty = False
         if not dic:
-            self.empty = True
             return
         self.url = dic.get("url", "")
         self.method = dic.get("method")
@@ -410,29 +400,30 @@ class _Request:
         self.headersSize = self.headerSize
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"Url = {self.url.split('?')[0]}({self.method})"
-        else:
-            return ""
+        return f"Url = {self.url.split('?')[0]}({self.method})"
 
     def __str__(self) -> str:
         return self.__repr__()
 
     @property
     def query(self):
-        return self._query()
+        if self._query:
+            return self._query()
 
     @property
     def cookies(self):
-        return self._cookies()
+        if self._cookies:
+            return self._cookies()
 
     @property
     def headers(self):
-        return self._headers()
+        if self._headers:
+            return self._headers()
 
     @property
     def postData(self):
-        return self._postData()
+        if self._postData:
+            return self._postData()
 
 
 class _Response:
@@ -449,10 +440,14 @@ class _Response:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Response, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, Any] | None):
-        self.empty = False
         if not dic:
-            self.empty = True
             return
         self.status = dic.get("status", 0)
         self.comment = dic.get("comment")
@@ -469,25 +464,25 @@ class _Response:
         self.redirectURL = self.redirectUrl
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"{self.content:.25}"
-        else:
-            return ""
+        return f"{self.content:.25}"
 
     def __str__(self) -> str:
         return self.__repr__()
 
     @property
     def cookies(self):
-        return self._cookies()
+        if self._cookies:
+            return self._cookies()
 
     @property
     def headers(self):
-        return self._headers()
+        if self._headers:
+            return self._headers()
 
     @property
     def content(self):
-        return self._content()
+        if self._content:
+            return self._content()
 
 
 class _Cache:
@@ -511,10 +506,14 @@ class _Cache:
 
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Cache, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, Any] | None):
-        self.empty = False
         if not dic:
-            self.empty = True
             return
 
         self.beforeRequest = dic.get("beforeRequest")
@@ -525,10 +524,7 @@ class _Cache:
         self.after = self.afterRequest
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"[Cache ] {self.before} -> {self.after}"
-        else:
-            return ""
+        return f"[Cache ] {self.before} -> {self.after}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -546,10 +542,14 @@ class _Timings:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_Timings, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, str | int] | None):
-        self.empty = False
         if not dic:
-            self.empty = True
             return
         self.blocked = int(dic.get("blocked", 0))
         self.dns = int(dic.get("dns", 0))
@@ -566,10 +566,7 @@ class _Timings:
         return self.total
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"Timming: {self.total}"
-        else:
-            return "Timming:- ?"
+        return f"Timming: {self.total}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -581,6 +578,12 @@ class Creator:
     version [string, Required] -  The version number of the application that created the log.
     comment [string, Optional] -  A comment provided by the user or the application.
     """
+
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(Creator, cls).__new__(cls)
+        else:
+            return None
 
     def __init__(self, dic: Dict[str, str]) -> None:
         self.name: str = dic["name"]
@@ -603,16 +606,11 @@ class Browser(Creator):
     """
 
     def __init__(self, dic: Dict[str, str] | None) -> None:
-        self.empty = True
         if dic:
-            self.empty = False
             super().__init__(dic)
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"{self.name} -V({self.version})"
-        else:
-            return ""
+        return f"{self.name} -V({self.version})"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -627,25 +625,28 @@ class _page:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
+    def __new__(cls, x, /, **kwds):
+        if x:
+            return super(_page, cls).__new__(cls)
+        else:
+            return None
+
     def __init__(self, dic: Dict[str, str | dict] | None) -> None:
-        self.empty = True
-        if dic:
-            self.empty = False
-            self.id = dic.get("id")
-            self.title = dic.get("title")
-            self.started = dic.get("startedDateTime")
-            if isinstance(dic["pageTimings"], dict):
-                self.pageTimings = dic["pageTimings"]
-                self.loadDiff = self.pageTimings.get("onContentLoad", 0) - self.pageTimings.get("onLoad", 0)
-                #    milliseconds since page load started
-                self.loadtime = self.pageTimings.get("onLoad", -1)
-            self.costumes = parse_costume(dic=dic)
+        if not dic:
+            return
+        self.id = dic.get("id")
+        self.title = dic.get("title")
+        self.started = dic.get("startedDateTime")
+        if isinstance(dic["pageTimings"], dict):
+            self.pageTimings = dic["pageTimings"]
+            self.loadDiff = self.pageTimings.get("onContentLoad", 0) - self.pageTimings.get("onLoad", 0)
+
+            #    milliseconds since page load started
+            self.loadtime = self.pageTimings.get("onLoad", -1)
+        self.costumes = parse_costume(dic=dic)
 
     def __repr__(self) -> str:
-        if not self.empty:
-            return f"Page:- {self.id}"
-        else:
-            return f"Page:-  ?"
+        return f"Page:- {self.id}"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -800,6 +801,3 @@ class Har:
 
 def parse_costume(dic: Dict[str, Any]) -> Dict[str, Any]:
     return {i: dic[i] for i in dic if i.startswith("_")}
-
-
-q = exit
