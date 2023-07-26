@@ -11,4 +11,19 @@ HAR(http archive) to Scraper. Simple HAR file extractor that analyzes the provid
     > List of all securty vlun's that you can use to hack/bounty upon
     > Make You Coffee
 
- 
+# How to use:-
+    > pip installl H2S
+    > Follow the examples in example directory
+    ```python
+        from H2S import h2s
+        x = h2s.Har("MyHarFile.har")
+        pages = x.pages()
+        requests_list = x.entries()
+        for i in requests_list:
+            print(i.request.url)
+            print(i.response.content)
+            print(i.request.query)
+            print(i.request.url)
+            ....
+    ```
+    
