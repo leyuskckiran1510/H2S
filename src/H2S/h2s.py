@@ -28,6 +28,8 @@ import json
 from urllib.parse import urlencode
 from typing import Any, Dict, List, Union
 from base64 import standard_b64decode as base64decode
+import zlib
+import brotli
 
 
 class _cookie:
@@ -326,13 +328,13 @@ class _Content:
     comment [string, optional] (new in 1.2) - A comment provided by the user or the application.
     """
 
-    def __new__(cls, x, /, **kwds):
+    def __new__(cls, x, y, /, **kwds):
         if x:
             return super(_Content, cls).__new__(cls)
         else:
             return None
 
-    def __init__(self, dic: Dict[str, Any] | None) -> None:
+    def __init__(self, dic: Dict[str, Any] | None, headers: _Headers) -> None:
         if not dic:
             return
         self.size = dic.get("size")
@@ -342,12 +344,34 @@ class _Content:
         self.content = self.text
         self.comment = dic.get("comment")
         self.encoding = dic.get("encoding")
+        self.headers = headers
         self.check()
+
+    def decompress(self):
+        if isinstance(self.content, bytes):
+            try:
+                self.content = zlib.decompress(self.content, wbits=16 + zlib.MAX_WBITS)
+            except zlib.error:
+                try:
+                    self.content = zlib.decompress(self.content)
+                except zlib.error:
+                    pass
+            finally:
+                self.content = str(self.content)
+
+    def ifcompressed(self):
+        if "content-encoding" in self.headers.headerDic:
+            compression = self.headers.headerDic["content-encoding"]
+            if compression in ["gzip", "deflate", "br"]:
+                self.decompress()
+            else:
+                self.content = str(self.content)
 
     def check(self):
         if self.encoding:
             if self.encoding == "base64" and self.text:
                 self.content = base64decode(self.text)
+                self.ifcompressed()
                 self.__delattr__("text")
             else:
                 raise ReferenceError("Could not Find the encoding ", self.encoding)
@@ -458,7 +482,7 @@ class _Response:
         self.redirectUrl = dic.get("redirectURL")
         self._cookies = _Cookies(dic.get("cookies"))
         self._headers = _Headers(dic.get("headers"))
-        self._content = _Content(dic.get("content"))
+        self._content = _Content(dic.get("content"), self._headers)
 
         self.headersSize = self.headerSize
         self.redirectURL = self.redirectUrl
@@ -769,7 +793,6 @@ class Har:
 
     def parse(self):
         __file_pointer = open(self.filename, "r")
-        print(__file_pointer.readable())
         if __file_pointer.readable():
             self.raw_dic = json.load(__file_pointer)
         else:
